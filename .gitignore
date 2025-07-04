@@ -43,3 +43,6 @@ application.yml
 # Ignore all environment-specific configs
 *.properties
 *.yml
+
+# Firebase 서비스 계정 키 무시
+src/main/resources/firebase-service-account.json
