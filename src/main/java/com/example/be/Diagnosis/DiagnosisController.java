@@ -1,4 +1,4 @@
-package com.example.be.controller;
+package com.example.be.Diagnosis;
 
 
 import io.swagger.v3.oas.annotations.Operation;
