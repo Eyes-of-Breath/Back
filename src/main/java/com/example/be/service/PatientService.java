@@ -107,4 +107,12 @@ public class PatientService {
         return memberRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("로그인한 사용자 정보를 찾을 수 없습니다."));
     }
+
+    @Transactional(readOnly = true)
+    public List<PatientDto> findAllPatients() {
+        return patientRepository.findAll() // 모든 환자 데이터를 가져옴
+                .stream()                  // 스트림으로 변환
+                .map(PatientDto::fromEntity) // 각 환자 엔티티를 DTO로 변환
+                .collect(Collectors.toList()); // 리스트로 만듦
+    }
 }
