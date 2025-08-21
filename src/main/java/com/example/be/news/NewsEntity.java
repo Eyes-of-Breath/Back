@@ -12,21 +12,21 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class News {
+public class NewsEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer newsId;
 
+    @Column(nullable = false)
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String newsUrl;
 
     @Column(columnDefinition = "TEXT")
     private String summary;
 
     private LocalDateTime publishedAt;
-
     private LocalDateTime crawledAt;
 }

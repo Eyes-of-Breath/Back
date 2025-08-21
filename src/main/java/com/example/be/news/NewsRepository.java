@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface NewsRepository extends JpaRepository<News, Integer> {
+public interface NewsRepository extends JpaRepository<NewsEntity, Integer> {
     // 기본적인 CRUD 기능 자동 제공됨
+    boolean existsByNewsUrl(String newsUrl);
 }
