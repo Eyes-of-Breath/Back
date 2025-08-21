@@ -64,4 +64,11 @@ public class PatientController {
         patientService.deleteAllPatientsByCurrentUser();
         return ResponseEntity.ok(Map.of("message", "모든 환자 정보가 성공적으로 삭제되었습니다."));
     }
+
+    // 7. 모든 환자 목록 조회 API
+    @GetMapping
+    public ResponseEntity<List<PatientDto>> getAllPatients() {
+        List<PatientDto> allPatients = patientService.findAllPatients();
+        return ResponseEntity.ok(allPatients);
+    }
 }
