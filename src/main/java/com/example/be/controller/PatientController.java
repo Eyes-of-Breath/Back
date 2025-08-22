@@ -3,12 +3,15 @@ package com.example.be.controller;
 import com.example.be.dto.PatientDto;
 import com.example.be.service.PatientService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
-
 
 @RestController
 @RequestMapping("/api/v1/patients")
@@ -18,11 +21,41 @@ public class PatientController {
     private final PatientService patientService;
 
     // 1. 신규 환자 등록 API
-    @PostMapping
-    public ResponseEntity<PatientDto> createPatient(@RequestBody PatientDto patientDto) {
-        PatientDto createdPatient = patientService.createPatient(patientDto);
+    @PostMapping(value = "/with-initial-xray", consumes = "multipart/form-data")
+    public ResponseEntity<PatientDto> createPatientWithInitialXray(
+            @RequestPart("file") MultipartFile file,
+            @RequestParam("patientCode") String patientCode,
+            @RequestParam("name") String name,
+            @RequestParam("birthDate") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate birthDate,
+            @RequestParam(value = "gender", required = false) String gender,
+            @RequestParam(value = "bloodType", required = false) String bloodType,
+            @RequestParam(value = "height", required = false) Float height,
+            @RequestParam(value = "weight", required = false) Float weight,
+            @RequestParam(value = "country", required = false) String country
+    ) throws IOException {
+
+        // 파라미터로 받은 환자 정보를 DTO 객체로 만듭니다.
+        PatientDto patientDto = PatientDto.builder()
+                .patientCode(patientCode)
+                .name(name)
+                .birthDate(birthDate)
+                .gender(gender)
+                .bloodType(bloodType)
+                .height(height)
+                .weight(weight)
+                .country(country)
+                .build();
+
+        PatientDto createdPatient = patientService.createPatientWithInitialXray(patientDto, file);
         return ResponseEntity.ok(createdPatient);
     }
+
+//    // 1. 신규 환자 등록 API
+//    @PostMapping
+//    public ResponseEntity<PatientDto> createPatient(@RequestBody PatientDto patientDto) {
+//        PatientDto createdPatient = patientService.createPatient(patientDto);
+//        return ResponseEntity.ok(createdPatient);
+//    }
 
     // 2. 환자 동적 검색 API
     @GetMapping("/search")
