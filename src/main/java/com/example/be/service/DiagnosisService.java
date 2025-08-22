@@ -4,62 +4,135 @@ import com.example.be.dto.CommentDto;
 import com.example.be.dto.DiagnosisResultDto;
 import com.example.be.entity.*;
 import com.example.be.repository.*;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class DiagnosisService {
 
-    private final FirebaseService firebaseService;
+    // FirebaseService 의존성 제거, Storage 직접 주입
+    private final Storage storage;
     private final MemberRepository memberRepository;
     private final PatientRepository patientRepository;
     private final XrayImageRepository xrayImageRepository;
     private final DiagnosisResultRepository diagnosisResultRepository;
     private final CommentRepository commentRepository;
 
+    @Value("${firebase.bucket-name}")
+    private String bucketName; // application.yml에서 버킷 이름 주입
+
     @Transactional
     public DiagnosisResult requestDiagnosis(Integer patientId, MultipartFile xrayFile) throws IOException {
         // 1. 사용자 및 환자 정보 조회
         Member member = getCurrentMember();
         Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new IllegalArgumentException("환자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("환자를 찾을 수 없습니다. ID: " + patientId));
 
-        // 2. Firebase에 X-ray 이미지 업로드
-        String imageUrl = firebaseService.uploadFile(xrayFile);
+        // 2. 원본 X-ray 이미지를 'original/' 폴더에 업로드
+        String originalImageUrl = uploadFileToFirebase(xrayFile, "original/");
 
         // 3. XrayImage 정보 DB에 저장
         XrayImage xrayImage = XrayImage.builder()
                 .patient(patient)
                 .member(member)
-                .imageUrl(imageUrl)
+                .imageUrl(originalImageUrl)
                 .fileName(xrayFile.getOriginalFilename())
-                .fileSize((int) xrayFile.getSize()) // 파일 사이즈 추가
+                .fileSize((int) xrayFile.getSize())
                 .build();
         xrayImageRepository.save(xrayImage);
 
         // 4. AI 모델 호출 (시뮬레이션)
+        // 실제로는 AI 모델 API를 호출하여 아래 값들을 받아와야 합니다.
         String predictedDisease = "폐렴 (Pneumonia)";
         float probability = 0.925f;
-        String gradcamUrl = "path/to/gradcam/image_in_firebase.jpg";
+        // AI 모델로부터 Grad-CAM 이미지 데이터를 byte 배열로 받는다고 가정
+        byte[] gradCamImageBytes = getGradCamImageFromAIModel(xrayFile);
 
-        // 5. AI 진단 결과 DB에 저장
+        // 5. Grad-CAM 이미지를 'grad-cam/' 폴더에 업로드
+        String gradCamImageUrl = uploadBytesToFirebase(gradCamImageBytes, "grad-cam/", xrayFile.getOriginalFilename());
+
+        // 6. AI 진단 결과 DB에 저장
         DiagnosisResult result = DiagnosisResult.builder()
                 .xrayImage(xrayImage)
                 .predictedDisease(predictedDisease)
                 .probability(probability)
-                .gradcamImagePath(gradcamUrl)
+                .gradcamImagePath(gradCamImageUrl) // Grad-CAM 이미지 URL 저장
                 .build();
 
         return diagnosisResultRepository.save(result);
     }
 
+    /**
+     * AI 모델을 호출하여 Grad-CAM 이미지를 생성하는 메소드 (시뮬레이션)
+     * @param xrayFile 원본 X-ray 이미지 파일
+     * @return 생성된 Grad-CAM 이미지의 byte 배열
+     */
+    private byte[] getGradCamImageFromAIModel(MultipartFile xrayFile) {
+        // TODO: 여기에 실제 AI 모델 API를 호출하고, 결과로 받은 이미지 데이터를 byte[] 형태로 반환하는 로직을 구현해야 합니다.
+        // 현재는 시뮬레이션을 위해 비어있는 byte 배열을 반환합니다.
+        System.out.println("AI 모델 호출 시뮬레이션: " + xrayFile.getOriginalFilename());
+        return new byte[0];
+    }
+
+    /**
+     * MultipartFile을 Firebase Storage에 업로드하는 헬퍼 메소드
+     * @param file 업로드할 파일
+     * @param folder 저장할 폴더 경로 (e.g., "original/")
+     * @return 업로드된 파일의 URL
+     */
+    private String uploadFileToFirebase(MultipartFile file, String folder) throws IOException {
+        String uniqueFileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+        String storagePath = folder + uniqueFileName;
+
+        BlobId blobId = BlobId.of(bucketName, storagePath);
+        BlobInfo blobInfo = BlobInfo.newBuilder(blobId)
+                .setContentType(file.getContentType())
+                .build();
+
+        storage.create(blobInfo, file.getBytes());
+
+        String encodedFileName = URLEncoder.encode(storagePath, StandardCharsets.UTF_8);
+        return "https://firebasestorage.googleapis.com/v0/b/" + bucketName + "/o/" + encodedFileName + "?alt=media";
+    }
+
+    /**
+     * byte 배열을 Firebase Storage에 업로드하는 헬퍼 메소드
+     * @param fileBytes 업로드할 파일의 byte 배열
+     * @param folder 저장할 폴더 경로 (e.g., "grad-cam/")
+     * @param originalFileName 원본 파일 이름 (고유 파일명 생성에 사용)
+     * @return 업로드된 파일의 URL
+     */
+    private String uploadBytesToFirebase(byte[] fileBytes, String folder, String originalFileName) throws IOException {
+        String uniqueFileName = UUID.randomUUID().toString() + "_gradcam_" + originalFileName;
+        String storagePath = folder + uniqueFileName;
+
+        BlobId blobId = BlobId.of(bucketName, storagePath);
+        // Grad-CAM 이미지는 보통 jpeg 또는 png 형식이므로 Mime Type을 고정하거나 파라미터로 받을 수 있습니다.
+        BlobInfo blobInfo = BlobInfo.newBuilder(blobId)
+                .setContentType("image/jpeg")
+                .build();
+
+        storage.create(blobInfo, fileBytes);
+
+        String encodedFileName = URLEncoder.encode(storagePath, StandardCharsets.UTF_8);
+        return "https://firebasestorage.googleapis.com/v0/b/" + bucketName + "/o/" + encodedFileName + "?alt=media";
+    }
+
     @Transactional
-    public CommentDto addDoctorOpinion(Integer resultId, String content) { // 👈 반환 타입을 CommentDto로 변경
+    public CommentDto addDoctorOpinion(Integer resultId, String content) {
         Member member = getCurrentMember();
         DiagnosisResult result = diagnosisResultRepository.findById(resultId)
                 .orElseThrow(() -> new IllegalArgumentException("진단 결과를 찾을 수 없습니다."));

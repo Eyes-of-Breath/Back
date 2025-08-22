@@ -71,4 +71,11 @@ public class PatientController {
         List<PatientDto> allPatients = patientService.findAllPatients();
         return ResponseEntity.ok(allPatients);
     }
+
+    // 8. 모든 환자 및 X-ray 이미지 목록 조회 API (새로 추가)
+    @GetMapping("/with-xrays")
+    public ResponseEntity<List<PatientDto>> getAllPatientsWithXrays() {
+        List<PatientDto> allPatientsWithXrays = patientService.findAllPatientsWithXrays();
+        return ResponseEntity.ok(allPatientsWithXrays);
+    }
 }
