@@ -1,6 +1,7 @@
 package com.example.be.dto;
 
 import com.example.be.entity.Patient;
+import lombok.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -8,8 +9,11 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List; // List import 추가
+import java.util.stream.Collectors; // Collectors import 추가
 
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -30,6 +34,8 @@ public class PatientDto {
     private LocalDate lastVisitDate;
     private String specialNotes;
     private Integer memberId;
+
+    private List<XrayImageDto> xrayImages;
 
     // Patient 엔티티를 PatientDto로 변환하는 정적(static) 메소드
     public static PatientDto fromEntity(Patient patient) {

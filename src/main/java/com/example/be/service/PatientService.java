@@ -1,10 +1,12 @@
 package com.example.be.service;
 
 import com.example.be.dto.PatientDto;
+import com.example.be.dto.XrayImageDto;
 import com.example.be.entity.Member;
 import com.example.be.entity.Patient;
 import com.example.be.repository.MemberRepository;
 import com.example.be.repository.PatientRepository;
+import com.example.be.repository.XrayImageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ public class PatientService {
 
     private final PatientRepository patientRepository;
     private final MemberRepository memberRepository; // Member를 조회하기 위해 주입
+    private final XrayImageRepository xrayImageRepository;
 
     // 환자 생성
     public PatientDto createPatient(PatientDto patientDto) {
@@ -50,6 +53,30 @@ public class PatientService {
 
         Patient savedPatient = patientRepository.save(newPatient);
         return PatientDto.fromEntity(savedPatient);
+    }
+
+    //모든 환자 정보와 각 환자의 X-ray 이미지 목록을 함께 조회하는 메소드 (새로 추가)
+    @Transactional(readOnly = true)
+    public List<PatientDto> findAllPatientsWithXrays() {
+        // 1. 모든 환자 정보를 조회합니다.
+        List<Patient> allPatients = patientRepository.findAll();
+
+        // 2. 각 환자(Patient)를 PatientDto로 변환합니다.
+        return allPatients.stream().map(patient -> {
+            // 3. Patient 엔티티를 PatientDto로 변환합니다.
+            PatientDto patientDto = PatientDto.fromEntity(patient);
+
+            // 4. 해당 환자의 ID로 모든 X-ray 이미지들을 조회합니다.
+            List<XrayImageDto> xrayImageDtos = xrayImageRepository.findAllByPatient_PatientId(patient.getPatientId())
+                    .stream()
+                    .map(XrayImageDto::fromEntity) // XrayImage를 XrayImageDto로 변환
+                    .collect(Collectors.toList());
+
+            // 5. 조회된 이미지 DTO 리스트를 환자 DTO에 설정합니다.
+            patientDto.setXrayImages(xrayImageDtos);
+
+            return patientDto;
+        }).collect(Collectors.toList());
     }
 
     // 환자 정보 조회 (DB ID 기준)
