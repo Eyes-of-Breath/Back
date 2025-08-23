@@ -2,9 +2,12 @@ package com.example.be.controller;
 
 import com.example.be.dto.PatientDto;
 import com.example.be.service.PatientService;
+import jakarta.validation.Valid; // Valid import 추가
+import jakarta.validation.constraints.Pattern; // Pattern import 추가
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -16,6 +19,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/patients")
 @RequiredArgsConstructor
+@Validated // 클래스 레벨에 @Validated 추가 (RequestParam 유효성 검사를 위해)
 public class PatientController {
 
     private final PatientService patientService;
@@ -27,7 +31,7 @@ public class PatientController {
             @RequestParam("patientCode") String patientCode,
             @RequestParam("name") String name,
             @RequestParam("birthDate") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate birthDate,
-            @RequestParam(value = "gender", required = false) String gender,
+            @RequestParam(value = "gender", required = false) @Pattern(regexp = "^[MF]$", message = "성별은 'M' 또는 'F' 값만 가능합니다.") String gender,
             @RequestParam(value = "bloodType", required = false) String bloodType,
             @RequestParam(value = "height", required = false) Float height,
             @RequestParam(value = "weight", required = false) Float weight,
@@ -79,7 +83,8 @@ public class PatientController {
     @PutMapping("/{patientId}")
     public ResponseEntity<PatientDto> updatePatient(
             @PathVariable Integer patientId,
-            @RequestBody PatientDto patientDto) {
+            // @RequestBody 앞에 @Valid를 추가하여 DTO 유효성 검사 활성화
+            @Valid @RequestBody PatientDto patientDto) {
         PatientDto updatedPatient = patientService.updatePatient(patientId, patientDto);
         return ResponseEntity.ok(updatedPatient);
     }
