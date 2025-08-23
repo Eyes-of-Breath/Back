@@ -14,6 +14,7 @@ public class CommentDto {
     private String memberNickname; // 작성자 닉네임
     private String content;
     private LocalDateTime createdAt;
+    private Integer patientId;
 
     public static CommentDto fromEntity(Comment entity) {
         return CommentDto.builder()
@@ -23,6 +24,7 @@ public class CommentDto {
                 .memberNickname(entity.getMember().getNickname())
                 .content(entity.getContent())
                 .createdAt(entity.getCreatedAt())
+                .patientId(entity.getDiagnosisResult().getXrayImage().getPatient().getPatientId())
                 .build();
     }
 }

@@ -1,25 +1,38 @@
 package com.example.be.service;
 
-import com.google.cloud.storage.Blob;
-import com.google.cloud.storage.Bucket;
-import com.google.firebase.cloud.StorageClient;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
-import java.io.InputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class FirebaseService {
 
-    public String uploadFile(MultipartFile file) throws IOException {
-        Bucket bucket = StorageClient.getInstance().bucket("your-firebase-storage-bucket-name"); // 👈 Firebase Storage 버킷 이름
-        InputStream content = file.getInputStream();
-        String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename(); // 파일 이름 중복 방지
+    private final Storage storage;
 
-        Blob blob = bucket.create(fileName, content, file.getContentType());
+    @Value("${firebase.bucket-name}")
+    private String bucketName;
 
-        // 업로드된 파일의 공개 URL 반환 (버킷 권한 설정에 따라 다를 수 있음)
-        return blob.getMediaLink();
+    public String uploadFile(MultipartFile file, String path) throws IOException {
+        String originalFileName = file.getOriginalFilename();
+        String uniqueFileName = UUID.randomUUID().toString() + "_" + originalFileName;
+        String storagePath = path + "/" + uniqueFileName;
+
+        BlobId blobId = BlobId.of(bucketName, storagePath);
+        BlobInfo blobInfo = BlobInfo.newBuilder(blobId)
+                .setContentType(file.getContentType())
+                .build();
+        storage.create(blobInfo, file.getBytes());
+
+        String encodedPath = URLEncoder.encode(storagePath, StandardCharsets.UTF_8);
+        return "https://firebasestorage.googleapis.com/v0/b/" + bucketName + "/o/" + encodedPath + "?alt=media";
     }
 }

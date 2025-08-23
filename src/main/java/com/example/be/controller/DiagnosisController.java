@@ -2,34 +2,61 @@ package com.example.be.controller;
 
 import com.example.be.dto.CommentDto;
 import com.example.be.dto.DiagnosisResultDto;
+import com.example.be.dto.PatientDto;
 import com.example.be.entity.Comment;
 import com.example.be.entity.DiagnosisResult;
 import com.example.be.service.DiagnosisService;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/diagnosis")
 @RequiredArgsConstructor
+@Validated
 public class DiagnosisController {
 
     private final DiagnosisService diagnosisService;
 
-    // X-ray 이미지 업로드 및 AI 분석 요청
-    @PostMapping
-    public ResponseEntity<DiagnosisResult> requestDiagnosis(
-            @RequestParam("patientId") Integer patientId,
-            @RequestParam("file") MultipartFile xrayFile) throws IOException {
-
-        DiagnosisResult result = diagnosisService.requestDiagnosis(patientId, xrayFile);
+    // 신규 환자 등록, X-ray 업로드, AI 분석을 한 번에 처리하는 통합 API
+    // 신규 환자 진단 시작 API
+    @PostMapping(value = "/start/new-patient", consumes = "multipart/form-data")
+    public ResponseEntity<PatientDto> startNewPatientDiagnosis( // 반환 타입을 PatientDto로 변경
+                                                                @RequestPart("file") MultipartFile file,
+                                                                @RequestParam("name") String name,
+                                                                @RequestParam("birthDate") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate birthDate,
+                                                                @RequestParam("gender") @Pattern(regexp = "^[MF]$") String gender,
+                                                                @RequestParam(required = false) String patientCode
+    ) throws IOException {
+        PatientDto patientInfo = PatientDto.builder()
+                .patientCode(patientCode)
+                .name(name)
+                .birthDate(birthDate)
+                .gender(gender)
+                .build();
+        PatientDto result = diagnosisService.startDiagnosisForNewPatient(patientInfo, file); // 반환 타입을 PatientDto로 받음
         return ResponseEntity.ok(result);
     }
 
+    // 기존 환자 진단 시작 API
+    @PostMapping(value = "/start/existing-patient", consumes = "multipart/form-data")
+    public ResponseEntity<PatientDto> startExistingPatientDiagnosis( // 반환 타입을 PatientDto로 변경
+                                                                     @RequestPart("file") MultipartFile file,
+                                                                     @RequestParam("patientId") Integer patientId
+    ) throws IOException {
+        PatientDto result = diagnosisService.startDiagnosisForExistingPatient(patientId, file);
+        return ResponseEntity.ok(result);
+    }
+
+    //AI 진단 결과 조회
     @GetMapping("/{resultId}")
     public ResponseEntity<DiagnosisResultDto> getDiagnosisResult(@PathVariable Integer resultId) {
         DiagnosisResultDto resultDto = diagnosisService.getDiagnosisResultById(resultId);
@@ -38,7 +65,7 @@ public class DiagnosisController {
 
     // 의료진 소견 추가
     @PostMapping("/{resultId}/comments")
-    public ResponseEntity<CommentDto> addOpinion( // 👈 반환 타입을 CommentDto로 변경
+    public ResponseEntity<CommentDto> addOpinion( // 반환 타입을 CommentDto로 변경
                                                   @PathVariable Integer resultId,
                                                   @RequestBody Map<String, String> payload) {
 
