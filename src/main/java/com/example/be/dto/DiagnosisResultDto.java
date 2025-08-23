@@ -15,6 +15,7 @@ public class DiagnosisResultDto {
     private Float probability;
     private String gradcamImagePath;
     private LocalDateTime createdAt;
+    private Integer patientId;
 
     public static DiagnosisResultDto fromEntity(DiagnosisResult entity) {
         return DiagnosisResultDto.builder()
@@ -25,6 +26,7 @@ public class DiagnosisResultDto {
                 .probability(entity.getProbability())
                 .gradcamImagePath(entity.getGradcamImagePath())
                 .createdAt(entity.getCreatedAt())
+                .patientId(entity.getXrayImage().getPatient().getPatientId())
                 .build();
     }
 }

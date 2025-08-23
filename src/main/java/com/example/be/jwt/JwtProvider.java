@@ -22,7 +22,8 @@ public class JwtProvider {
 
     // JWT 생성 메서드
     public String create(String email) {
-        Date expiredDate = Date.from(Instant.now().plus(1, ChronoUnit.HOURS)); // 1시간 유효한 토큰 생성
+//        Date expiredDate = Date.from(Instant.now().plus(1, ChronoUnit.HOURS)); // 1시간 유효한 토큰 생성
+        Date expiredDate = Date.from(Instant.now().plus(7, ChronoUnit.DAYS)); //유효 시간을 7일로 변경
         Key key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
 
         return Jwts.builder()

@@ -24,35 +24,35 @@ public class PatientController {
 
     private final PatientService patientService;
 
-    // 1. 신규 환자 등록 API
-    @PostMapping(value = "/with-initial-xray", consumes = "multipart/form-data")
-    public ResponseEntity<PatientDto> createPatientWithInitialXray(
-            @RequestPart("file") MultipartFile file,
-            @RequestParam("patientCode") String patientCode,
-            @RequestParam("name") String name,
-            @RequestParam("birthDate") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate birthDate,
-            @RequestParam(value = "gender", required = false) @Pattern(regexp = "^[MF]$", message = "성별은 'M' 또는 'F' 값만 가능합니다.") String gender,
-            @RequestParam(value = "bloodType", required = false) String bloodType,
-            @RequestParam(value = "height", required = false) Float height,
-            @RequestParam(value = "weight", required = false) Float weight,
-            @RequestParam(value = "country", required = false) String country
-    ) throws IOException {
-
-        // 파라미터로 받은 환자 정보를 DTO 객체로 만듭니다.
-        PatientDto patientDto = PatientDto.builder()
-                .patientCode(patientCode)
-                .name(name)
-                .birthDate(birthDate)
-                .gender(gender)
-                .bloodType(bloodType)
-                .height(height)
-                .weight(weight)
-                .country(country)
-                .build();
-
-        PatientDto createdPatient = patientService.createPatientWithInitialXray(patientDto, file);
-        return ResponseEntity.ok(createdPatient);
-    }
+//    // 1. 신규 환자 등록 API
+//    @PostMapping(value = "/with-initial-xray", consumes = "multipart/form-data")
+//    public ResponseEntity<PatientDto> createPatientWithInitialXray(
+//            @RequestPart("file") MultipartFile file,
+//            @RequestParam("patientCode") String patientCode,
+//            @RequestParam("name") String name,
+//            @RequestParam("birthDate") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate birthDate,
+//            @RequestParam(value = "gender", required = false) @Pattern(regexp = "^[MF]$", message = "성별은 'M' 또는 'F' 값만 가능합니다.") String gender,
+//            @RequestParam(value = "bloodType", required = false) String bloodType,
+//            @RequestParam(value = "height", required = false) Float height,
+//            @RequestParam(value = "weight", required = false) Float weight,
+//            @RequestParam(value = "country", required = false) String country
+//    ) throws IOException {
+//
+//        // 파라미터로 받은 환자 정보를 DTO 객체로 만듭니다.
+//        PatientDto patientDto = PatientDto.builder()
+//                .patientCode(patientCode)
+//                .name(name)
+//                .birthDate(birthDate)
+//                .gender(gender)
+//                .bloodType(bloodType)
+//                .height(height)
+//                .weight(weight)
+//                .country(country)
+//                .build();
+//
+//        PatientDto createdPatient = patientService.createPatientWithInitialXray(patientDto, file);
+//        return ResponseEntity.ok(createdPatient);
+//    }
 
 //    // 1. 신규 환자 등록 API
 //    @PostMapping
