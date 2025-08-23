@@ -1,6 +1,7 @@
 package com.example.be.dto;
 
 import com.example.be.entity.Patient;
+import jakarta.validation.constraints.Pattern;
 import lombok.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,7 +23,10 @@ public class PatientDto {
     private Integer patientId;
     private String patientCode; // 환자 고유 ID
     private String name;
+
+    @Pattern(regexp = "^[MF]$", message = "성별은 'M' 또는 'F' 값만 가능합니다.")
     private LocalDate birthDate;
+
     private String gender;
     private String bloodType;
     private Float height;
