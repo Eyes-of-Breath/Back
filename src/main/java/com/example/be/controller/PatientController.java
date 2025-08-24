@@ -64,9 +64,10 @@ public class PatientController {
     // 2. 환자 동적 검색 API
     @GetMapping("/search")
     public ResponseEntity<List<PatientDto>> searchPatients(
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) LocalDate birthDate,
-            @RequestParam(required = false) String gender
+            // 이름, 생년월일, 성별 필수값으로
+            @RequestParam String name,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate birthDate,
+            @RequestParam String gender
     ) {
         List<PatientDto> patients = patientService.searchPatients(name, birthDate, gender);
         return ResponseEntity.ok(patients);
@@ -74,7 +75,7 @@ public class PatientController {
 
     // 3. 환자 정보 조회 API (DB ID 기준)
     @GetMapping("/{patientId}")
-    public ResponseEntity<PatientDto> getPatient(@PathVariable Integer patientId) { // 👈 Long을 Integer로 수정
+    public ResponseEntity<PatientDto> getPatient(@PathVariable Integer patientId) { // Long을 Integer로 수정
         PatientDto patientDto = patientService.getPatientById(patientId);
         return ResponseEntity.ok(patientDto);
     }

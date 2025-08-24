@@ -28,11 +28,12 @@ public interface PatientRepository extends JpaRepository<Patient, Integer> {
             "(:name IS NULL OR p.name LIKE %:name%) AND " +
             "(:birthDate IS NULL OR p.birthDate = :birthDate) AND " +
             "(:gender IS NULL OR p.gender = :gender)")
-    List<Patient> findByCriteria(
-            @Param("name") String name,
-            @Param("birthDate") LocalDate birthDate,
-            @Param("gender") String gender
-    );
+//    List<Patient> findByCriteria(
+//            @Param("name") String name,
+//            @Param("birthDate") LocalDate birthDate,
+//            @Param("gender") String gender
+//    );
+    List<Patient> findByNameAndBirthDateAndGender(String name, LocalDate birthDate, String gender);
 
 
 
