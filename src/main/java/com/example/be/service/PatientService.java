@@ -117,13 +117,19 @@ public class PatientService {
 
     @Transactional(readOnly = true)
     public List<PatientDto> searchPatients(String name, LocalDate birthDate, String gender) {
-        if (name == null && birthDate == null && gender == null) {
-            return List.of();
-        }
-        List<Patient> patients = patientRepository.findByCriteria(name, birthDate, gender);
-        return patients.stream()
-                .map(PatientDto::fromEntity)
-                .collect(Collectors.toList());
+        // 1. 세 조건이 모두 일치하는 환자 목록을 조회합니다.
+        List<Patient> patients = patientRepository.findByNameAndBirthDateAndGender(name, birthDate, gender);
+
+        // 2. 각 환자마다 연결된 X-ray 이미지 목록을 찾아서 DTO에 담아줍니다.
+        return patients.stream().map(patient -> {
+            PatientDto patientDto = PatientDto.fromEntity(patient);
+            List<XrayImageDto> xrayImageDtos = xrayImageRepository.findAllByPatient_PatientId(patient.getPatientId())
+                    .stream()
+                    .map(XrayImageDto::fromEntity)
+                    .collect(Collectors.toList());
+            patientDto.setXrayImages(xrayImageDtos); // DTO에 이미지 목록 설정
+            return patientDto;
+        }).collect(Collectors.toList());
     }
 
     public PatientDto updatePatient(Integer patientId, PatientDto patientDto) {
