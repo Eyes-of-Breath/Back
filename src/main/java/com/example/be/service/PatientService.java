@@ -1,10 +1,12 @@
 package com.example.be.service;
 
+import com.example.be.dto.DiagnosisResultDto;
 import com.example.be.dto.PatientDto;
 import com.example.be.dto.XrayImageDto;
 import com.example.be.entity.Member;
 import com.example.be.entity.Patient;
 import com.example.be.entity.XrayImage;
+import com.example.be.repository.DiagnosisResultRepository;
 import com.example.be.repository.MemberRepository;
 import com.example.be.repository.PatientRepository;
 import com.example.be.repository.XrayImageRepository;
@@ -30,9 +32,10 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class PatientService {
 
+    private final DiagnosisResultRepository diagnosisResultRepository;
     private final PatientRepository patientRepository;
     private final MemberRepository memberRepository;
     private final XrayImageRepository xrayImageRepository;
@@ -99,10 +102,23 @@ public class PatientService {
 
         return allPatients.stream().map(patient -> {
             PatientDto patientDto = PatientDto.fromEntity(patient);
+
+            // 1. 환자에게 속한 모든 X-ray 이미지를 찾
             List<XrayImageDto> xrayImageDtos = xrayImageRepository.findAllByPatient_PatientId(patient.getPatientId())
                     .stream()
-                    .map(XrayImageDto::fromEntity)
+                    .map(xrayImage -> {
+                        XrayImageDto xrayImageDto = XrayImageDto.fromEntity(xrayImage);
+
+                        // 2. 각 X-ray 이미지에 해당하는 진단 결과를 찾
+                        diagnosisResultRepository.findByXrayImage(xrayImage)
+                                .ifPresent(diagnosisResult -> {
+                                    // 3. 진단 결과가 있으면 DTO로 변환하여 설정
+                                    xrayImageDto.setDiagnosisResult(DiagnosisResultDto.fromEntity(diagnosisResult));
+                                });
+                        return xrayImageDto;
+                    })
                     .collect(Collectors.toList());
+
             patientDto.setXrayImages(xrayImageDtos);
             return patientDto;
         }).collect(Collectors.toList());
@@ -120,14 +136,25 @@ public class PatientService {
         // 1. 세 조건이 모두 일치하는 환자 목록을 조회합니다.
         List<Patient> patients = patientRepository.findByNameAndBirthDateAndGender(name, birthDate, gender);
 
-        // 2. 각 환자마다 연결된 X-ray 이미지 목록을 찾아서 DTO에 담아줍니다.
+        // 2. 각 환자마다 연결된 X-ray 이미지와 진단 결과 목록을 찾아서 DTO에 담
         return patients.stream().map(patient -> {
             PatientDto patientDto = PatientDto.fromEntity(patient);
+
             List<XrayImageDto> xrayImageDtos = xrayImageRepository.findAllByPatient_PatientId(patient.getPatientId())
                     .stream()
-                    .map(XrayImageDto::fromEntity)
+                    .map(xrayImage -> {
+                        XrayImageDto xrayImageDto = XrayImageDto.fromEntity(xrayImage);
+
+                        // 각 X-ray 이미지에 해당하는 진단 결과를 찾아서 설정
+                        diagnosisResultRepository.findByXrayImage(xrayImage)
+                                .ifPresent(diagnosisResult ->
+                                        xrayImageDto.setDiagnosisResult(DiagnosisResultDto.fromEntity(diagnosisResult))
+                                );
+                        return xrayImageDto;
+                    })
                     .collect(Collectors.toList());
-            patientDto.setXrayImages(xrayImageDtos); // DTO에 이미지 목록 설정
+
+            patientDto.setXrayImages(xrayImageDtos);
             return patientDto;
         }).collect(Collectors.toList());
     }
