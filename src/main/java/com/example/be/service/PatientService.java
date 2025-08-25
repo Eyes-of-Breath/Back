@@ -124,41 +124,84 @@ public class PatientService {
         }).collect(Collectors.toList());
     }
 
+    // 모든 환자 목록 조회
     @Transactional(readOnly = true)
-    public PatientDto getPatientById(Integer patientId) {
-        return patientRepository.findById(patientId)
-                .map(PatientDto::fromEntity)
+    public List<PatientDto> findAllPatientsWithDetails() {
+        return patientRepository.findAll().stream()
+                .map(this::mapPatientToDtoWithDetails)
+                .collect(Collectors.toList());
+    }
+
+    // ID로 특정 환자 조회
+    @Transactional(readOnly = true)
+    public PatientDto getPatientByIdWithDetails(Integer patientId) {
+        Patient patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> new IllegalArgumentException("환자를 찾을 수 없습니다. ID: " + patientId));
+        return mapPatientToDtoWithDetails(patient);
     }
 
+    // Code로 특정 환자 조회
     @Transactional(readOnly = true)
+    public PatientDto getPatientByCodeWithDetails(String patientCode) {
+        Patient patient = patientRepository.findByPatientCode(patientCode)
+                .orElseThrow(() -> new IllegalArgumentException("환자를 찾을 수 없습니다. Code: " + patientCode));
+        return mapPatientToDtoWithDetails(patient);
+    }
+    // 환자 검색
     public List<PatientDto> searchPatients(String name, LocalDate birthDate, String gender) {
-        // 1. 세 조건이 모두 일치하는 환자 목록을 조회합니다.
         List<Patient> patients = patientRepository.findByNameAndBirthDateAndGender(name, birthDate, gender);
-
-        // 2. 각 환자마다 연결된 X-ray 이미지와 진단 결과 목록을 찾아서 DTO에 담
-        return patients.stream().map(patient -> {
-            PatientDto patientDto = PatientDto.fromEntity(patient);
-
-            List<XrayImageDto> xrayImageDtos = xrayImageRepository.findAllByPatient_PatientId(patient.getPatientId())
-                    .stream()
-                    .map(xrayImage -> {
-                        XrayImageDto xrayImageDto = XrayImageDto.fromEntity(xrayImage);
-
-                        // 각 X-ray 이미지에 해당하는 진단 결과를 찾아서 설정
-                        diagnosisResultRepository.findByXrayImage(xrayImage)
-                                .ifPresent(diagnosisResult ->
-                                        xrayImageDto.setDiagnosisResult(DiagnosisResultDto.fromEntity(diagnosisResult))
-                                );
-                        return xrayImageDto;
-                    })
-                    .collect(Collectors.toList());
-
-            patientDto.setXrayImages(xrayImageDtos);
-            return patientDto;
-        }).collect(Collectors.toList());
+        return patients.stream()
+                .map(this::mapPatientToDtoWithDetails)
+                .collect(Collectors.toList());
     }
 
+//    [Helper Method] Patient 엔티티를 받아서 연관된 모든 상세 정보를 포함한 DTO로 변환
+    private PatientDto mapPatientToDtoWithDetails(Patient patient) {
+        PatientDto patientDto = PatientDto.fromEntity(patient);
+        List<XrayImageDto> xrayImageDtos = xrayImageRepository.findAllByPatient_PatientId(patient.getPatientId())
+                .stream()
+                .map(xrayImage -> {
+                    XrayImageDto xrayImageDto = XrayImageDto.fromEntity(xrayImage);
+                    diagnosisResultRepository.findByXrayImage(xrayImage)
+                            .ifPresent(diagnosisResult ->
+                                    xrayImageDto.setDiagnosisResult(DiagnosisResultDto.fromEntity(diagnosisResult))
+                            );
+                    return xrayImageDto;
+                })
+                .collect(Collectors.toList());
+        patientDto.setXrayImages(xrayImageDtos);
+        return patientDto;
+    }
+
+//    @Transactional(readOnly = true)
+//    public List<PatientDto> searchPatients(String name, LocalDate birthDate, String gender) {
+//        // 1. 세 조건이 모두 일치하는 환자 목록을 조회합니다.
+//        List<Patient> patients = patientRepository.findByNameAndBirthDateAndGender(name, birthDate, gender);
+//
+//        // 2. 각 환자마다 연결된 X-ray 이미지와 진단 결과 목록을 찾아서 DTO에 담
+//        return patients.stream().map(patient -> {
+//            PatientDto patientDto = PatientDto.fromEntity(patient);
+//
+//            List<XrayImageDto> xrayImageDtos = xrayImageRepository.findAllByPatient_PatientId(patient.getPatientId())
+//                    .stream()
+//                    .map(xrayImage -> {
+//                        XrayImageDto xrayImageDto = XrayImageDto.fromEntity(xrayImage);
+//
+//                        // 각 X-ray 이미지에 해당하는 진단 결과를 찾아서 설정
+//                        diagnosisResultRepository.findByXrayImage(xrayImage)
+//                                .ifPresent(diagnosisResult ->
+//                                        xrayImageDto.setDiagnosisResult(DiagnosisResultDto.fromEntity(diagnosisResult))
+//                                );
+//                        return xrayImageDto;
+//                    })
+//                    .collect(Collectors.toList());
+//
+//            patientDto.setXrayImages(xrayImageDtos);
+//            return patientDto;
+//        }).collect(Collectors.toList());
+//    }
+
+    @Transactional
     public PatientDto updatePatient(Integer patientId, PatientDto patientDto) {
         Member member = getCurrentMember();
         Patient patient = patientRepository.findByPatientIdAndMember_Id(patientId, member.getId())
@@ -167,6 +210,7 @@ public class PatientService {
         return PatientDto.fromEntity(patient);
     }
 
+    @Transactional
     public void deletePatient(Integer patientId) {
         Member member = getCurrentMember();
         if (!patientRepository.existsById(patientId)) {
@@ -177,6 +221,7 @@ public class PatientService {
         patientRepository.delete(patient);
     }
 
+    @Transactional
     public void deleteAllPatientsByCurrentUser() {
         Member member = getCurrentMember();
         patientRepository.deleteAllByMemberId(member.getId());
@@ -187,13 +232,5 @@ public class PatientService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return memberRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("로그인한 사용자 정보를 찾을 수 없습니다."));
-    }
-
-    @Transactional(readOnly = true)
-    public List<PatientDto> findAllPatients() {
-        return patientRepository.findAll()
-                .stream()
-                .map(PatientDto::fromEntity)
-                .collect(Collectors.toList());
     }
 }

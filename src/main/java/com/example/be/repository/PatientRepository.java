@@ -23,6 +23,10 @@ public interface PatientRepository extends JpaRepository<Patient, Integer> {
     // 환자 코드(고유 ID)로 환자가 존재하는지 확인
     boolean existsByPatientCode(String patientCode);
 
+    // patientCode로 환자를 찾는 메소드 추가
+    Optional<Patient> findByPatientCode(String patientCode);
+
+    // 검색 조건이 모두 일치하는 환자를 찾는 메소드
     // 이름, 생년월일, 성별로 동적 검색
     @Query("SELECT p FROM Patient p WHERE " +
             "(:name IS NULL OR p.name LIKE %:name%) AND " +
