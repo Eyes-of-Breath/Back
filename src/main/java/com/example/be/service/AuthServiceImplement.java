@@ -138,6 +138,8 @@ public class AuthServiceImplement implements AuthService {
     @Override
     public ResponseEntity<? super SignInResponseDto> signIn(SignInRequestDto dto) {
         String accessToken;
+        Integer memberId;
+        String nickname;
         try {
             String email = dto.getEmail();
             Member member = memberRepository.findByEmail(email).orElse(null);
@@ -154,12 +156,14 @@ public class AuthServiceImplement implements AuthService {
                 return SignInResponseDto.signInFail();
             }
 
+            memberId = member.getId();
+            nickname = member.getNickname();
             accessToken = jwtProvider.create(email);
 
         } catch (Exception exception) {
             exception.printStackTrace();
             return ResponseDto.databaseError();
         }
-        return SignInResponseDto.success(accessToken);
+        return SignInResponseDto.success(accessToken, memberId, nickname);
     }
 }

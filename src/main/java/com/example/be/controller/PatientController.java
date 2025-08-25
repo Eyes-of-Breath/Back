@@ -75,8 +75,14 @@ public class PatientController {
 
     // 3. 환자 정보 조회 API (DB ID 기준)
     @GetMapping("/{patientId}")
-    public ResponseEntity<PatientDto> getPatient(@PathVariable Integer patientId) { // Long을 Integer로 수정
-        PatientDto patientDto = patientService.getPatientById(patientId);
+    public ResponseEntity<PatientDto> getPatientById(@PathVariable Integer patientId) {
+        PatientDto patientDto = patientService.getPatientByIdWithDetails(patientId);
+        return ResponseEntity.ok(patientDto);
+    }
+    // 환자 Code로 특정 환자 조회 API
+    @GetMapping("/code/{patientCode}")
+    public ResponseEntity<PatientDto> getPatientByCode(@PathVariable String patientCode) {
+        PatientDto patientDto = patientService.getPatientByCodeWithDetails(patientCode);
         return ResponseEntity.ok(patientDto);
     }
 
@@ -107,7 +113,7 @@ public class PatientController {
     // 7. 모든 환자 목록 조회 API
     @GetMapping
     public ResponseEntity<List<PatientDto>> getAllPatients() {
-        List<PatientDto> allPatients = patientService.findAllPatients();
+        List<PatientDto> allPatients = patientService.findAllPatientsWithDetails();
         return ResponseEntity.ok(allPatients);
     }
 
