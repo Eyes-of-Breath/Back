@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Getter
@@ -24,6 +25,10 @@ public class DiagnosisResult {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "image_id")
     private XrayImage xrayImage; // 어떤 이미지에 대한 결과인지 연결
+
+    // DiagnosisResult에 연결된 Comment 목록에 연쇄 삭제 옵션을 추가
+    @OneToMany(mappedBy = "diagnosisResult", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> comments;
 
     @Column(name = "predicted_disease")
     private String predictedDisease; // 예측된 질병명

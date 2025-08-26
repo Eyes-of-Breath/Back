@@ -173,34 +173,6 @@ public class PatientService {
         return patientDto;
     }
 
-//    @Transactional(readOnly = true)
-//    public List<PatientDto> searchPatients(String name, LocalDate birthDate, String gender) {
-//        // 1. 세 조건이 모두 일치하는 환자 목록을 조회합니다.
-//        List<Patient> patients = patientRepository.findByNameAndBirthDateAndGender(name, birthDate, gender);
-//
-//        // 2. 각 환자마다 연결된 X-ray 이미지와 진단 결과 목록을 찾아서 DTO에 담
-//        return patients.stream().map(patient -> {
-//            PatientDto patientDto = PatientDto.fromEntity(patient);
-//
-//            List<XrayImageDto> xrayImageDtos = xrayImageRepository.findAllByPatient_PatientId(patient.getPatientId())
-//                    .stream()
-//                    .map(xrayImage -> {
-//                        XrayImageDto xrayImageDto = XrayImageDto.fromEntity(xrayImage);
-//
-//                        // 각 X-ray 이미지에 해당하는 진단 결과를 찾아서 설정
-//                        diagnosisResultRepository.findByXrayImage(xrayImage)
-//                                .ifPresent(diagnosisResult ->
-//                                        xrayImageDto.setDiagnosisResult(DiagnosisResultDto.fromEntity(diagnosisResult))
-//                                );
-//                        return xrayImageDto;
-//                    })
-//                    .collect(Collectors.toList());
-//
-//            patientDto.setXrayImages(xrayImageDtos);
-//            return patientDto;
-//        }).collect(Collectors.toList());
-//    }
-
     @Transactional
     public PatientDto updatePatient(Integer patientId, PatientDto patientDto) {
         Member member = getCurrentMember();
@@ -224,7 +196,12 @@ public class PatientService {
     @Transactional
     public void deleteAllPatientsByCurrentUser() {
         Member member = getCurrentMember();
-        patientRepository.deleteAllByMemberId(member.getId());
+
+        List<Patient> patientsToDelete = patientRepository.findAllByMember_Id(member.getId());
+
+        if (!patientsToDelete.isEmpty()) {
+            patientRepository.deleteAll(patientsToDelete);
+        }
     }
 
     // 3. 누락되었던 getCurrentMember() 메소드 추가
