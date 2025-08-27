@@ -2,6 +2,7 @@ package com.example.be.news;
 
 import com.example.be.news.NewsDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,5 +28,8 @@ public class NewsService {
                 newsRepository.save(entity);
             }
         }
+    }
+    public List<NewsEntity> findAllNews() {
+        return newsRepository.findAll(Sort.by(Sort.Direction.DESC, "crawledAt"));
     }
 }
