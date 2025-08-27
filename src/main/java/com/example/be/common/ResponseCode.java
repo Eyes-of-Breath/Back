@@ -11,4 +11,7 @@ public interface ResponseCode {
 
     String MAIL_FAIL = "MF";
     String DATABASE_ERROR = "DBE";
+
+    String AUTHORIZATION_FAIL = "AF";
+    String PASSWORD_MISMATCH = "PM";
 }

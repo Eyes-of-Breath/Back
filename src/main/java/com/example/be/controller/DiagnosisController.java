@@ -31,16 +31,26 @@ public class DiagnosisController {
     @PostMapping(value = "/start/new-patient", consumes = "multipart/form-data")
     public ResponseEntity<PatientDto> startNewPatientDiagnosis( // 반환 타입을 PatientDto로 변경
                                                                 @RequestPart("file") MultipartFile file,
+                                                                // --- 필수 파라미터 ---
                                                                 @RequestParam("name") String name,
                                                                 @RequestParam("birthDate") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate birthDate,
                                                                 @RequestParam("gender") @Pattern(regexp = "^[MF]$") String gender,
-                                                                @RequestParam(required = false) String patientCode
+                                                                // --- 선택 파라미터 ---
+                                                                @RequestParam(required = false) String patientCode,
+                                                                @RequestParam(required = false) String bloodType,
+                                                                @RequestParam(required = false) Float height,
+                                                                @RequestParam(required = false) Float weight,
+                                                                @RequestParam(required = false) String country
     ) throws IOException {
         PatientDto patientInfo = PatientDto.builder()
                 .patientCode(patientCode)
                 .name(name)
                 .birthDate(birthDate)
                 .gender(gender)
+                .bloodType(bloodType)
+                .height(height)
+                .weight(weight)
+                .country(country)
                 .build();
         PatientDto result = diagnosisService.startDiagnosisForNewPatient(patientInfo, file); // 반환 타입을 PatientDto로 받음
         return ResponseEntity.ok(result);
@@ -72,5 +82,12 @@ public class DiagnosisController {
         String content = payload.get("content");
         CommentDto commentDto = diagnosisService.addDoctorOpinion(resultId, content);
         return ResponseEntity.ok(commentDto);
+    }
+
+    //특정 진단 보고서 삭제 API
+    @DeleteMapping("/{resultId}")
+    public ResponseEntity<Map<String, String>> deleteDiagnosisResult(@PathVariable Integer resultId) {
+        diagnosisService.deleteDiagnosisResult(resultId);
+        return ResponseEntity.ok(Map.of("message", "진단 보고서가 성공적으로 삭제되었습니다."));
     }
 }

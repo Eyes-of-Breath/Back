@@ -12,10 +12,11 @@ import java.util.Optional;
 
 public interface PatientRepository extends JpaRepository<Patient, Integer> {
 
-    // 특정 사용자가 등록한 모든 환자 정보 삭제
-    @Modifying // 이 어노테이션은 INSERT, UPDATE, DELETE 쿼리에 필요합니다.
-    @Query("DELETE FROM Patient p WHERE p.member.id = :memberId")
-    void deleteAllByMemberId(@Param("memberId") Integer memberId);
+//    // 특정 사용자가 등록한 모든 환자 정보 삭제
+//    @Modifying // 이 어노테이션은 INSERT, UPDATE, DELETE 쿼리에 필요합니다.
+//    @Query("DELETE FROM Patient p WHERE p.member.id = :memberId")
+//    void deleteAllByMemberId(@Param("memberId") Integer memberId);
+    List<Patient> findAllByMember_Id(Integer memberId);
 
     // memberId와 patientId로 환자 정보를 찾는 메소드 (소유권 확인용)
     Optional<Patient> findByPatientIdAndMember_Id(Integer patientId, Integer memberId);

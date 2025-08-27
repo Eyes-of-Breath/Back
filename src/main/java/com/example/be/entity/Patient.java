@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Getter
@@ -65,6 +66,9 @@ public class Patient {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Member member;
+    // 환자에 연결된 XrayImage 목록을 추가하고, 연쇄 삭제 옵션을 설정
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<XrayImage> xrayImages;
     // 환자 정보 수정을 위한 메소드 추가
     public void update(PatientDto dto) {
         this.patientCode = dto.getPatientCode();

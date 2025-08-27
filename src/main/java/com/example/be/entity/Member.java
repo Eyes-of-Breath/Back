@@ -47,4 +47,8 @@ public class Member {
         this.nickname = dto.getNickname();
         this.emailVerified = true; // 이메일 인증을 통과했으므로 true
     }
+    //비밀번호 변경
+    public void updatePassword(String newPassword) {
+        this.password = newPassword;
+    }
 }
