@@ -72,4 +72,9 @@ public class ScheduleController {
         TodoItemDto updatedItem = scheduleService.toggleTodoItem(todoId);
         return ResponseEntity.ok(updatedItem);
     }
+    @DeleteMapping("/todos/{todoId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteTodo(@PathVariable Integer todoId) {
+        scheduleService.deleteTodo(todoId);
+    }
 }

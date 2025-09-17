@@ -118,6 +118,14 @@ public class ScheduleService {
         return TodoItemDto.fromEntity(item);
     }
 
+    //할 일 삭제
+    public void deleteTodo(Integer todoId) {
+        Integer memberId = getCurrentMember().getId();
+        var item = todoItemRepository.findByTodoIdAndMember_Id(todoId, memberId)
+                .orElseThrow(() -> new SecurityException("삭제 권한이 없거나 존재하지 않는 할 일입니다."));
+        todoItemRepository.delete(item);
+    }
+
     // 현재 로그인한 사용자 정보를 가져오는 헬퍼 메소드
     private Member getCurrentMember() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
