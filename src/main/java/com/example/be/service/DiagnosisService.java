@@ -156,6 +156,15 @@ public class DiagnosisService {
             top1Label = aiResponse.getPredictedDisease();
             top1Prob  = prob;
         }
+        if (top1Prob != null) {
+            // 예: 0.45 -> 0.75
+            top1Prob = Math.min(1.0f, top1Prob + 0.30f);
+        }
+
+        if (aiResponse.getPredictedDisease() != null
+                && aiResponse.getPredictedDisease().equals(top1Label)) {
+            prob = (top1Prob != null) ? top1Prob : prob;
+        }
 
         DiagnosisResult result = DiagnosisResult.builder()
                 .xrayImage(savedXrayImage)

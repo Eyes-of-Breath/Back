@@ -15,4 +15,7 @@ public interface TodoItemRepository extends JpaRepository<TodoItem, Integer> {
 
     // 특정 사용자의 특정 할 일을 조회 (소유권 확인용)
     Optional<TodoItem> findByTodoIdAndMember(Integer todoId, Member member);
+
+    // 로그인 사용자 소유의 할 일만 조회 (권한 체크용)
+    Optional<TodoItem> findByTodoIdAndMember_Id(Integer todoId, Integer memberId);
 }
